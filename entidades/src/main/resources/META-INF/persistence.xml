@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+             version="3.2">
+
+  <persistence-unit name="cargauyPU" transaction-type="JTA">
+    <!-- Datasource definido en WildFly (standalone.xml), no en el WAR -->
+    <jta-data-source>java:jboss/datasources/CargaUyDS</jta-data-source>
+
+    <!-- Las entidades se descubren escaneando este jar -->
+    <exclude-unlisted-classes>false</exclude-unlisted-classes>
+
+    <properties>
+      <!-- El esquema lo maneja Flyway (infra/postgis/migrations).
+           Hibernate solo valida que las entidades coincidan con el esquema. -->
+      <property name="hibernate.hbm2ddl.auto" value="validate"/>
+    </properties>
+  </persistence-unit>
+</persistence>

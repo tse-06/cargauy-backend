@@ -1,0 +1,30 @@
+embed-server --server-config=standalone.xml --std-out=echo
+
+/subsystem=datasources/jdbc-driver=postgresql:add( \
+    driver-name=postgresql, \
+    driver-module-name=org.postgresql, \
+    driver-class-name=org.postgresql.Driver, \
+    driver-xa-datasource-class-name=org.postgresql.xa.PGXADataSource)
+
+data-source add \
+    --name=CargaUyDS \
+    --jndi-name=java:jboss/datasources/CargaUyDS \
+    --driver-name=postgresql \
+    --connection-url=${env.POSTGRES_URL:jdbc:postgresql://postgis:5432/cargauy} \
+    --user-name=${env.POSTGRES_USER:cargauy_app} \
+    --password=${env.POSTGRES_PASSWORD:changeme} \
+    --jta=true \
+    --use-ccm=true \
+    --min-pool-size=5 \
+    --max-pool-size=20 \
+    --validate-on-match=true \
+    --background-validation=false \
+    --valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLValidConnectionChecker \
+    --exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLExceptionSorter
+
+# Los usuarios los autentica MecanismoJwt (Jakarta Security) contra la base de
+# la app, no contra un realm de Elytron. Con integrated-jaspi=true Elytron
+# exige que el usuario exista en su dominio y rechaza el login (ELY01177)
+/subsystem=undertow/application-security-domain=other:write-attribute(name=integrated-jaspi, value=false)
+
+stop-embedded-server

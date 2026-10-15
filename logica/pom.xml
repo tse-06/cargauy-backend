@@ -1,0 +1,102 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>uy.carga.tse</groupId>
+    <artifactId>cargauy-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>uy.carga.tse.logica</groupId>
+  <artifactId>logica</artifactId>
+  <packaging>ejb</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>uy.carga.tse.datatypes</groupId>
+      <artifactId>datatypes</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>uy.carga.tse.entidades</groupId>
+      <artifactId>entidades</artifactId>
+    </dependency>
+
+    <!-- CDI, EJB y Jakarta Data (repositorios) -->
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+    </dependency>
+
+    <!-- Hibernate: respaldo de los repositorios de Jakarta Data -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+    </dependency>
+
+    <!-- Hibernate Spatial: Point (JTS) de las coordenadas de las guias -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+    </dependency>
+
+    <!-- GraphHopper: calculo de ruta/desvio para deteccion de infracciones -->
+    <dependency>
+      <groupId>com.graphhopper</groupId>
+      <artifactId>graphhopper-core</artifactId>
+    </dependency>
+
+    <!-- Mongo: leer eventos de tracking -->
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
+    </dependency>
+
+    <!-- Tika: deteccion del tipo MIME por el contenido de los archivos -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+    </dependency>
+
+    <!-- JWT -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- MapStruct: mappers entidad <-> DTO (ver comun.ConfiguracionMappers) -->
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+    </dependency>
+
+    <!-- SLF4J: logging -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <!-- Mockito: dobles de los repositorios y del contexto del EJB en los tests -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Tests del login con gub.uy: jakarta.jakartaee-api trae solo la API de
+         JSON-P; en WildFly la implementacion la da el servidor -->
+    <dependency>
+      <groupId>org.eclipse.parsson</groupId>
+      <artifactId>parsson</artifactId>
+      <version>1.1.7</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

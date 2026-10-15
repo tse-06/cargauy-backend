@@ -1,0 +1,49 @@
+# Maven
+target/
+ear-work/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+
+# WildFly / app server local
+standalone/data/
+standalone/log/
+standalone/tmp/
+
+# Config/secretos locales (no todo *.properties: los que se commitean quedan)
+application-local.properties
+*.local.properties
+.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archivos subidos en desarrollo (montados en wildfly-logica, ver docker-compose.yml)
+/archivos/

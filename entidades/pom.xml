@@ -1,0 +1,41 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>uy.carga.tse</groupId>
+    <artifactId>cargauy-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>uy.carga.tse.entidades</groupId>
+  <artifactId>entidades</artifactId>
+
+  <dependencies>
+    <dependency>
+      <groupId>uy.carga.tse.datatypes</groupId>
+      <artifactId>datatypes</artifactId>
+    </dependency>
+
+    <!-- JPA -->
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+    </dependency>
+
+    <!-- Hibernate -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+    </dependency>
+    
+    <!-- Hibernate Spatial: tipos Geometry/Point para PostGIS -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+    </dependency>
+
+    <!-- Lombok -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+  </dependencies>
+</project>

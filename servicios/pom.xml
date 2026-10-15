@@ -1,0 +1,34 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>uy.carga.tse</groupId>
+    <artifactId>cargauy-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>uy.carga.tse.servicios</groupId>
+  <artifactId>servicios</artifactId>
+  <packaging>war</packaging>
+
+  <dependencies>
+    <!-- provided: logica y sus dependencias ya van en el EAR (modulo ejb y lib/),
+    asi no se duplican en WEB-INF/lib -->
+    <dependency>
+      <groupId>uy.carga.tse.logica</groupId>
+      <artifactId>logica</artifactId>
+      <type>ejb</type>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- JAX-RS, CDI y JSON-B para exponer la API REST -->
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+    </dependency>
+
+    <!-- SLF4J: logging -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+</project>

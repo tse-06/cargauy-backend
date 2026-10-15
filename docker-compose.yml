@@ -1,0 +1,168 @@
+services:
+  postgis:
+    image: postgis/postgis:17-3.5
+    # La imagen oficial de postgis no publica build arm64 (Apple Silicon): corre emulada
+    platform: linux/amd64
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  flyway:
+    image: flyway/flyway:11
+    command: migrate
+    env_file:
+      - .env
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgis:5432/${POSTGRES_DB}
+      FLYWAY_USER: ${POSTGRES_USER}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_CONNECT_RETRIES: 10
+    depends_on:
+      postgis:
+        condition: service_healthy
+    volumes:
+      - ./infra/postgis/migrations:/flyway/sql:ro
+
+  mongodb:
+    image: mongo:9.0.2
+    env_file:
+      - .env
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./infra/mongodb/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  kafka:
+    image: apache/kafka:4.3.1
+    env_file:
+      - .env
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    ports:
+      - "29092:29092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  # WildFly con la logica de negocio (cargauy.ear: logica + servicios en /api)
+  wildfly-logica:
+    build:
+      context: .
+      dockerfile: infra/wildfly/logica/Dockerfile
+      target: dev
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+      - "8787:8787"
+    environment:
+      DEBUG: "true"
+      DEBUG_PORT: "*:8787"
+      POSTGRES_URL: jdbc:postgresql://postgis:5432/${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MONGO_URI: mongodb://${MONGO_LOGICA_USER}:${MONGO_LOGICA_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=${MONGO_INITDB_DATABASE}
+      # Clave de firma de los JWT de sesion (minimo 32 caracteres). Si falta,
+      # el despliegue de la logica falla (ver ServicioJwt)
+      JWT_SECRET: ${JWT_SECRET:-}
+      # Vigencia en minutos de los JWT segun el rol activo. Si se omite, se usa
+      # el valor por defecto de ServicioJwt (ej. ADMINISTRADOR 30, CHOFER 43200)
+      JWT_EXPIRACION_MINUTOS_ADMINISTRADOR: ${JWT_EXPIRACION_MINUTOS_ADMINISTRADOR:-}
+      JWT_EXPIRACION_MINUTOS_AUTORIDAD: ${JWT_EXPIRACION_MINUTOS_AUTORIDAD:-}
+      JWT_EXPIRACION_MINUTOS_FUNCIONARIO: ${JWT_EXPIRACION_MINUTOS_FUNCIONARIO:-}
+      JWT_EXPIRACION_MINUTOS_ENCARGADO_EMPRESA: ${JWT_EXPIRACION_MINUTOS_ENCARGADO_EMPRESA:-}
+      JWT_EXPIRACION_MINUTOS_CHOFER: ${JWT_EXPIRACION_MINUTOS_CHOFER:-}
+      # Directorio donde se guarda el contenido de los archivos (ver AlmacenamientoDisco)
+      ARCHIVOS_DIRECTORIO: ${ARCHIVOS_DIRECTORIO:-/var/lib/cargauy/archivos}
+      # URLs firmadas de descarga de archivos. ARCHIVOS_URL_BASE y
+      # ARCHIVOS_URL_SECRETO son obligatorias: si faltan, el despliegue de la
+      # logica falla (ver FirmaArchivos). La vigencia por defecto es de 5 minutos
+      ARCHIVOS_URL_BASE: ${ARCHIVOS_URL_BASE:-}
+      ARCHIVOS_URL_SECRETO: ${ARCHIVOS_URL_SECRETO:-}
+      ARCHIVOS_URL_VIGENCIA_MINUTOS: ${ARCHIVOS_URL_VIGENCIA_MINUTOS:-}
+      # Login con gub.uy (ID Uruguay). Si faltan, el despliegue funciona pero
+      # /auth/gubuy/* responde con error (ver GubUyConfigProducer)
+      GUBUY_ISSUER: ${GUBUY_ISSUER:-}
+      GUBUY_CLIENT_ID: ${GUBUY_CLIENT_ID:-}
+      GUBUY_CLIENT_SECRET: ${GUBUY_CLIENT_SECRET:-}
+      GUBUY_REDIRECT_URI: ${GUBUY_REDIRECT_URI:-}
+      GUBUY_ALLOWED_RETURN: ${GUBUY_ALLOWED_RETURN:-}
+      AUTH_FLOW_KEY: ${AUTH_FLOW_KEY:-}
+      GUBUY_COOKIE_SECURE: ${GUBUY_COOKIE_SECURE:-}
+      GUBUY_SCOPES: ${GUBUY_SCOPES:-}
+      GUBUY_PKCE: ${GUBUY_PKCE:-}
+      GUBUY_DOCUMENT_CLAIM: ${GUBUY_DOCUMENT_CLAIM:-}
+      GUBUY_LEVEL_CLAIM: ${GUBUY_LEVEL_CLAIM:-}
+      GUBUY_ALLOW_WEAK_RSA: ${GUBUY_ALLOW_WEAK_RSA:-false}
+      PDI_PERSONAS: ${PDI_PERSONAS:-}
+      # Origenes de los fronts permitidos por CORS (ver CorsFilter)
+      FRONTOFFICE_URL: ${FRONTOFFICE_URL:-}
+      BACKOFFICE_URL: ${BACKOFFICE_URL:-}
+    volumes:
+      - ./ear/target:/opt/jboss/wildfly/standalone/deployments
+      # En desarrollo los archivos quedan en ./archivos para poder inspeccionarlos
+      - ./archivos:${ARCHIVOS_DIRECTORIO:-/var/lib/cargauy/archivos}
+
+  # WildFly de ingesta: consume eventos de tracking de Kafka y los guarda en Mongo
+  wildfly-ingesta:
+    build:
+      context: .
+      dockerfile: infra/wildfly/ingesta/Dockerfile
+      target: dev
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+      - "9991:9990"
+      - "8788:8787"
+    environment:
+      DEBUG: "true"
+      DEBUG_PORT: "*:8787"
+      MONGO_URI: mongodb://${MONGO_INGESTA_USER}:${MONGO_INGESTA_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=${MONGO_INITDB_DATABASE}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - ./ingesta-tracking/target:/opt/jboss/wildfly/standalone/deployments
+
+volumes:
+  postgis_data:
+  mongodb_data:
+  kafka_data:

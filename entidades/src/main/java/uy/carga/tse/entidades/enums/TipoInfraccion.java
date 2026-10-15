@@ -1,0 +1,11 @@
+package uy.carga.tse.entidades.enums;
+
+public enum TipoInfraccion {
+    EXCESO_DE_CARGA_EXPLICITO,
+    EXCESO_DE_CARGA_IMPLICITO,
+    VEHICULO_SIN_HABILITACION_VIGENTE,
+    VIAJE_SIN_GUIA,
+    DESVIO_DE_RUTA,
+    EVENTO_NO_NOTIFICADO,
+    SECUENCIA_DE_EVENTOS_IMPOSIBLE,
+}

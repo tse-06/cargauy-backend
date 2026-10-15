@@ -1,0 +1,84 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>uy.carga.tse</groupId>
+    <artifactId>cargauy-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>uy.carga.tse.ear</groupId>
+  <artifactId>ear</artifactId>
+  <packaging>ear</packaging>
+
+  <!-- EAR que se despliega en el WildFly de logica: logica como modulo ejb,
+  servicios como modulo web, y el resto de las dependencias (datatypes, entidades,
+  graphhopper, mongo, jjwt...) en lib/ -->
+  <dependencies>
+    <dependency>
+      <groupId>uy.carga.tse.logica</groupId>
+      <artifactId>logica</artifactId>
+      <type>ejb</type>
+    </dependency>
+    <dependency>
+      <groupId>uy.carga.tse.servicios</groupId>
+      <artifactId>servicios</artifactId>
+      <type>war</type>
+    </dependency>
+    <!-- Hibernate Spatial (tipos de PostGIS): WildFly no lo trae, asi que va en
+    lib/. En el resto de los modulos es provided por el dependencyManagement,
+    que tambien aplica a las transitivas: por eso se declara aca con compile.
+    hibernate-core se excluye porque lo da WildFly -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.hibernate.orm</groupId>
+          <artifactId>hibernate-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>cargauy</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-ear-plugin</artifactId>
+        <configuration>
+          <version>11</version>
+          <defaultLibBundleDir>lib</defaultLibBundleDir>
+          <!-- El directorio de trabajo del plugin queda fuera de target/, porque
+          target/ se monta como carpeta deployments de WildFly en docker-compose.yml:
+          si no, el jar/war sueltos que deja ahi se despliegan por segunda vez
+          junto al ear y chocan los context-root -->
+          <workDirectory>${project.build.directory}/../ear-work</workDirectory>
+          <outputFileNameMapping>@{artifactId}@@{dashClassifier?}@.@{extension}@</outputFileNameMapping>
+          <modules>
+            <webModule>
+              <groupId>uy.carga.tse.servicios</groupId>
+              <artifactId>servicios</artifactId>
+              <contextRoot>/api</contextRoot>
+            </webModule>
+          </modules>
+        </configuration>
+      </plugin>
+      <!-- ear-work queda fuera de target/ y hay que limpiarlo aparte: el plugin
+      del ear solo copia una dependencia si es mas nueva que la que ya esta, y
+      como los nombres no llevan version, al cambiar de version puede quedar la
+      vieja (paso con commons-io 1.3.1 de graphhopper en vez de la 2.x de Tika) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>ear-work</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

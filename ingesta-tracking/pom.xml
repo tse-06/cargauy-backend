@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>uy.carga.tse</groupId>
+    <artifactId>cargauy-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>uy.carga.tse.ingesta-tracking</groupId>
+  <artifactId>ingesta-tracking</artifactId>
+  <packaging>war</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>uy.carga.tse.datatypes</groupId>
+      <artifactId>datatypes</artifactId>
+    </dependency>
+
+    <!-- CDI/EJB -->
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+    </dependency>
+
+    <!-- Kafka: consume los eventos de tracking -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+    </dependency>
+
+    <!-- Mongo: guarda los eventos de tracking -->
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
+    </dependency>
+
+    <!-- SLF4J: logging -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>ingesta-tracking</finalName>
+  </build>
+</project>

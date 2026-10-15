@@ -1,0 +1,16 @@
+[
+  {
+    "label": "Attach to WildFly (logica)",
+    "adapter": "Java",
+    "request": "attach",
+    "hostName": "localhost",
+    "port": 8787
+  },
+  {
+    "label": "Attach to WildFly (ingesta)",
+    "adapter": "Java",
+    "request": "attach",
+    "hostName": "localhost",
+    "port": 8788
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "languages": {
+    "Java": {
+      "formatter": "prettier",
+      "format_on_save": "on",
+      "prettier": {
+        "allowed": true,
+        "parser": "java",
+        "plugins": [
+          "prettier-plugin-java"
+        ],
+        "tabWidth": 4
+      }
+    }
+  }
+}

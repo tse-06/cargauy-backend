@@ -1,0 +1,272 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>uy.carga.tse</groupId>
+	<artifactId>cargauy-backend</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>datatypes</module>
+		<module>entidades</module>
+		<module>logica</module>
+		<module>servicios</module>
+		<module>ingesta-tracking</module>
+		<module>ear</module>
+	</modules>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.release>25</maven.compiler.release>
+		<jakartaee-api.version>11.0.0</jakartaee-api.version>
+		<hibernate.version>7.4.5.Final</hibernate.version>
+
+		<junit.version>5.11.4</junit.version>
+		<mockito.version>5.14.2</mockito.version>
+		<lombok.version>1.18.48</lombok.version>
+		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+		<maven-ejb-plugin.version>3.3.0</maven-ejb-plugin.version>
+		<maven-war-plugin.version>3.5.1</maven-war-plugin.version>
+		<maven-ear-plugin.version>3.4.0</maven-ear-plugin.version>
+		<spotless-maven-plugin.version>3.10.4</spotless-maven-plugin.version>
+		<graphhopper.version>11.1</graphhopper.version>
+		<mongodb-driver.version>5.12.0</mongodb-driver.version>
+		<kafka-clients.version>4.3.1</kafka-clients.version>
+		<jjwt.version>0.13.0</jjwt.version>
+		<slf4j.version>2.0.18</slf4j.version>
+		<tika.version>4.1.0</tika.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
+		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<!-- BOMs: fijan de una sola vez las versiones de todos los artifacts
+           	relacionados de JUnit/Mockito, para que no se desincronicen entre si -->
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>${junit.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-bom</artifactId>
+				<version>${mockito.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<!-- API de jakarta EE y de hibernate: las da Wildfly en runtime, por 
+      		eso se usa provided (se usan para compilar pero no se empaquetan en los WAR) -->
+			<dependency>
+				<groupId>jakarta.platform</groupId>
+				<artifactId>jakarta.jakartaee-api</artifactId>
+				<version>${jakartaee-api.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.orm</groupId>
+				<artifactId>hibernate-core</artifactId>
+				<version>${hibernate.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.orm</groupId>
+				<artifactId>hibernate-spatial</artifactId>
+				<version>${hibernate.version}</version>
+				<scope>provided</scope>
+			</dependency>
+
+			<!-- Lombok: solo para compilar, tampoco se empaqueta -->
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>${lombok.version}</version>
+				<scope>provided</scope>
+			</dependency>
+
+			<!-- SLF4J: logs -->
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
+				<scope>provided</scope>
+			</dependency>
+
+			<!-- Librerias que Wildfly no trae: 
+      		estas se empaquetan dentro de los WAR  -->
+			<dependency>
+				<groupId>com.graphhopper</groupId>
+				<artifactId>graphhopper-core</artifactId>
+				<version>${graphhopper.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mongodb</groupId>
+				<artifactId>mongodb-driver-sync</artifactId>
+				<version>${mongodb-driver.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka-clients</artifactId>
+				<version>${kafka-clients.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tika</groupId>
+				<artifactId>tika-core</artifactId>
+				<version>${tika.version}</version>
+			</dependency>
+
+			<!-- JWT para la autenticacion de la API. El scope runtime de jjwt-impl y
+			jjwt-jackson se declara en logica y no aca: un scope en dependencyManagement
+			pisa el de las dependencias transitivas, y eso los metia en servicios.war -->
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-api</artifactId>
+				<version>${jjwt.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-impl</artifactId>
+				<version>${jjwt.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-jackson</artifactId>
+				<version>${jjwt.version}</version>
+			</dependency>
+
+			<!-- MapStruct: genera los mappers entidad <-> DTO -->
+			<dependency>
+				<groupId>org.mapstruct</groupId>
+				<artifactId>mapstruct</artifactId>
+				<version>${mapstruct.version}</version>
+			</dependency>
+			<!-- Modulos propios -->
+			<dependency>
+				<groupId>uy.carga.tse.datatypes</groupId>
+				<artifactId>datatypes</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>uy.carga.tse.entidades</groupId>
+				<artifactId>entidades</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>uy.carga.tse.logica</groupId>
+				<artifactId>logica</artifactId>
+				<version>${project.version}</version>
+				<type>ejb</type>
+			</dependency>
+			<dependency>
+				<groupId>uy.carga.tse.servicios</groupId>
+				<artifactId>servicios</artifactId>
+				<version>${project.version}</version>
+				<type>war</type>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<!-- JUnit para todos los modulos -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<!-- Desde JDK 23 javac no corre procesadores de anotaciones que esten
+				solo en el classpath, hay que declarar Lombok explicitamente aca -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>${maven-compiler-plugin.version}</version>
+					<configuration>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+							<!-- Para que MapStruct vea los getters/setters que genera Lombok;
+							tiene que ir despues de Lombok y antes de MapStruct -->
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok-mapstruct-binding</artifactId>
+								<version>${lombok-mapstruct-binding.version}</version>
+							</path>
+							<!-- Genera las implementaciones de los mappers (@Mapper) -->
+							<path>
+								<groupId>org.mapstruct</groupId>
+								<artifactId>mapstruct-processor</artifactId>
+								<version>${mapstruct.version}</version>
+							</path>
+							<!-- Genera las implementaciones de los repositorios de Jakarta Data (@Repository) -->
+							<path>
+								<groupId>org.hibernate.orm</groupId>
+								<artifactId>hibernate-processor</artifactId>
+								<version>${hibernate.version}</version>
+							</path>
+						</annotationProcessorPaths>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-ejb-plugin</artifactId>
+					<version>${maven-ejb-plugin.version}</version>
+					<configuration>
+						<ejbVersion>4.0</ejbVersion>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>${maven-war-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-ear-plugin</artifactId>
+					<version>${maven-ear-plugin.version}</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<!-- Formato con prettier-java (mvn spotless:apply / spotless:check). No se
+			engancha a ninguna fase porque necesita Node y la imagen de build no lo tiene -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless-maven-plugin.version}</version>
+				<configuration>
+					<formats>
+						<format>
+							<includes>
+								<include>src/*/java/**/*.java</include>
+							</includes>
+							<prettier>
+								<devDependencies>
+									<prettier>3.9.10</prettier>
+									<prettier-plugin-java>2.11.0</prettier-plugin-java>
+								</devDependencies>
+								<config>
+									<tabWidth>4</tabWidth>
+									<parser>java</parser>
+									<plugins>prettier-plugin-java</plugins>
+								</config>
+							</prettier>
+						</format>
+					</formats>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
