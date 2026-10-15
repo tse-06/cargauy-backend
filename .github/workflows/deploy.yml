@@ -1,0 +1,88 @@
+name: Build and Deploy
+ 
+# Cada push a main: corre los tests, publica la imagen en ghcr.io y hace
+# redeploy del contenedor en Elastic Cloud (Virtuozzo) por API.
+# workflow_dispatch permite lanzarlo a mano desde la pestana Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+ 
+permissions:
+  contents: read
+  packages: write
+ 
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+ 
+      # Los tests son JUnit + Mockito, no necesitan bases de datos
+      - name: Tests
+        run: mvn -B verify
+ 
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      image: ${{ steps.vars.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+ 
+      # ghcr.io exige el nombre de la imagen en minusculas
+      - name: Definir tag e imagen
+        id: vars
+        run: |
+          echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}-logica" >> "$GITHUB_OUTPUT"
+ 
+      - uses: docker/setup-buildx-action@v3
+ 
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+ 
+      - name: Build y push (logica, stage prod)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/wildfly/logica/Dockerfile
+          target: prod
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}
+            ${{ steps.vars.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+ 
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # La plataforma solo permite un redeploy a la vez por entorno
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - name: Redeploy en Elastic Cloud
+        run: |
+          RESPONSE=$(curl -sS --location "https://${{ secrets.ELASTIC_PLATFORM_DOMAIN }}/1.0/environment/control/rest/redeploycontainers" \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode "envName=${{ secrets.ELASTIC_ENV_NAME }}" \
+            --data-urlencode "session=${{ secrets.ELASTIC_API_TOKEN }}" \
+            --data-urlencode "nodeGroup=${{ secrets.ELASTIC_NODE_GROUP }}" \
+            --data-urlencode "tag=${{ needs.build-and-push.outputs.image }}:${{ needs.build-and-push.outputs.tag }}" \
+            --data-urlencode "useExistingVolumes=true")
+          echo "$RESPONSE"
+          # La API responde "result": 0 si salio bien; cualquier otro valor es error
+          echo "$RESPONSE" | grep -Eq '"result" *: *0' || exit 1
+ 
